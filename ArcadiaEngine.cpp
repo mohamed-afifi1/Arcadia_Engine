@@ -290,19 +290,71 @@ long long InventorySystem::countStringPossibilities(string s) {
 // PART C: WORLD NAVIGATOR (Graphs)
 // =========================================================
 
-bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
-    // TODO: Implement path existence check using BFS or DFS
-    // edges are bidirectional
+bool pathVisit(int n, const vector<vector<int>>& edges, int source, int dest, vector<int>& visited) {
+    if (source == dest)
+        return true;
+    visited[source] = true;
+    for (int v : edges[source])
+        if (!visited[v])
+            if (pathVisit(n, edges, v, dest, visited))
+                return true;
     return false;
+}
+
+bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
+    vector<int> visited(n);
+    return pathVisit(n, edges, source, dest, visited);
 }
 
 long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long long silverRate,
                                        vector<vector<int>>& roadData) {
-    // TODO: Implement Minimum Spanning Tree (Kruskal's or Prim's)
-    // roadData[i] = {u, v, goldCost, silverCost}
-    // Total cost = goldCost * goldRate + silverCost * silverRate
-    // Return -1 if graph cannot be fully connected
-    return -1;
+    using Weight = long long;
+    using V = int;
+    using Edge = pair<Weight, V>;
+
+    vector<vector<Edge>> adj(n);
+    for (const auto& road : roadData)
+    {
+        V u = road[0], v = road[1];
+        Weight goldCost = road[2], silverCost = road[3];
+        Weight cost = goldCost*goldRate + silverCost*silverRate;
+        adj[u].push_back({cost, v});
+        adj[v].push_back({cost, u});
+    }
+
+    vector<Weight> minEdge(n, LLONG_MAX);
+    vector<bool> selected(n, false);
+    set<Edge> q;
+    for (V v = 1; v < n; v++)
+        q.insert({LLONG_MAX, v});
+    q.insert({0, 0});
+    minEdge[0] = 0;
+
+    Weight minBribe = 0;
+    int count = 0;
+    while (!q.empty())
+    {
+        auto min = q.begin();
+        auto [minW, u] = *min;
+        q.erase(min);
+        minBribe += minW;
+        selected[u] = true;
+        count++;
+
+        for (auto [w, v] : adj[u])
+        {
+            if (!selected[v] && w < minEdge[v])
+            {
+                q.erase({minEdge[v], v});
+                minEdge[v] = w;
+                q.insert({w, v});
+            }
+        }
+    }
+
+    if (count != n)
+        return -1;
+    return minBribe;
 }
 
 string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
