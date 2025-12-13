@@ -342,14 +342,12 @@ long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long lo
         count++;
 
         for (auto [w, v] : adj[u])
-        {
             if (!selected[v] && w < minEdge[v])
             {
                 q.erase({minEdge[v], v});
                 minEdge[v] = w;
                 q.insert({w, v});
             }
-        }
     }
 
     if (count != n)
@@ -357,12 +355,70 @@ long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long lo
     return minBribe;
 }
 
+void addBinary(std::string& bin, int n)
+{
+    int carry = n;
+    int i = bin.size() - 1;
+
+    while (i >= 0 && carry > 0)
+    {
+        if (bin[i] == '0')
+        {
+            int bit = carry & 1;
+            carry >>= 1;
+            int sum = bit;
+            if (sum == 1) bin[i] = '1';
+        }
+        else  // bin[i] == '1'
+        {
+            int bit = carry & 1;
+            carry >>= 1;
+            int sum = 1 + bit;
+            if (sum == 1) bin[i] = '1';
+            else if (sum == 2) { bin[i] = '0'; carry += 1; }
+        }
+        --i;
+    }
+
+    while (carry > 0)
+    {
+        bin.insert(bin.begin(), (carry & 1) ? '1' : '0');
+        carry >>= 1;
+    }
+}
+
 string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
-    // TODO: Implement All-Pairs Shortest Path (Floyd-Warshall)
-    // Sum all shortest distances between unique pairs (i < j)
-    // Return the sum as a binary string
-    // Hint: Handle large numbers carefully
-    return "0";
+    // Assume directed graph 
+    const int INF = -1;
+    int *m = new int[n*n];
+    for (int u = 0; u < n; u++)
+        for (int v = 0; v < n; v++)
+        {
+            m[u*n+v] = (u == v) ? 0 : INF;
+        }
+    for (const auto& road : roads)
+    {
+        int u = road[0], v = road[1], w = road[2];
+        m[u*n+v] = w;
+    }
+    for (int t = 0; t < n; t++)
+        for (int u = 0; u < n; u++)
+            for (int v = 0; v < n; v++)
+            {
+                if (m[u*n+t] == INF || m[t*n+v] == INF) continue;
+                if (m[u*n+v] == INF || (m[u*n+t] + m[t*n+v] < m[u*n+v]))
+                    m[u*n+v] = m[u*n+t] + m[t*n+v];
+            }
+    string sum = "0";
+    for (int u = 0; u < n; u++)
+        for (int v = u+1; v < n; v++)
+        {
+            int w = m[u*n+v];
+            if (w == INF) continue;
+            addBinary(sum, w);
+        }
+    delete[] m;
+    return sum;
 }
 
 // =========================================================
