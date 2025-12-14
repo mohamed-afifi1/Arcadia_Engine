@@ -244,19 +244,381 @@ private:
     // TODO: Define your Red-Black Tree node structure
     // Hint: Each node needs: id, price, color, left, right, parent pointers
 
+    struct RBTreeNode {
+        int id;
+        int price;
+        bool color;   // Black -> false, Red -> true
+        RBTreeNode* parent;
+        RBTreeNode* left;
+        RBTreeNode* right;
+
+        RBTreeNode(int id, int price) {
+            this->id = id;
+            this->price = price;
+            this->color = true;
+            this->parent = nullptr;
+            this->left = nullptr;
+            this->right = nullptr;
+        }
+    };
+
+    RBTreeNode* root;
+
+
+    void printTreeHelper(RBTreeNode* root, string indent, bool last) {
+        if (root != nullptr) {
+            cout << indent;
+            if (last) {
+                cout << "R----";
+                indent += "   ";
+            } else {
+                cout << "L----";
+                indent += "|  ";
+            }
+
+            string sColor = root->color ? "(RED)" : "(BLACK)";
+            cout << "[" << root->id << ":" << root->price << "] " << sColor << endl;
+
+            printTreeHelper(root->left, indent, false);
+            printTreeHelper(root->right, indent, true);
+        }
+    }
+
+    void rightRotate(RBTreeNode* child, RBTreeNode* parent) {
+        // Right rotate child with parent
+        if (parent->parent == nullptr) {
+            root = child;
+            child->parent = nullptr;
+        }
+        else {
+            if(parent == parent->parent->right)
+                parent->parent->right = child;
+            else
+                parent->parent->left = child;
+
+            child->parent = parent->parent;
+        }
+
+        parent->parent = child;
+        parent->left = child->right;
+        if(child->right != nullptr)
+            child->right->parent = parent;
+        child->right = parent;
+    }
+
+    void leftRotate(RBTreeNode* child, RBTreeNode* parent) {
+        // left rotate child with parent
+        if (parent->parent == nullptr) {
+            root = child;
+            child->parent = nullptr;
+        }
+        else {
+            if(parent == parent->parent->right)
+                parent->parent->right = child;
+            else
+                parent->parent->left = child;
+
+            child->parent = parent->parent;
+        }
+
+        parent->parent = child;
+        parent->right = child->left;
+        if(child->left != nullptr)
+            child->left->parent = parent;
+        child->left = parent;
+    }
+
+    void fixAfterInsertion(RBTreeNode* node) {
+        // Case 0: Root is red
+        // Case 1: Parent is black
+        // Case 2: Parent and Uncle are red
+        // Case 3: Parent is red, Uncle is black, and you are the right child
+        // Case 4: Parent is red, Uncle is black, and you are the left child
+
+        // Case 0
+        if(root == node) {
+            root->color = false;
+            return;
+        }
+
+        // Case 1
+        if(!node->parent->color) {
+            return;
+        }
+
+        RBTreeNode* parent = node->parent;
+        RBTreeNode* grandParent = parent->parent;
+
+        if(grandParent == nullptr)
+            return;
+
+        RBTreeNode* uncle;
+
+        if(parent == grandParent->left)
+            uncle = grandParent->right;
+        else
+            uncle = grandParent->left;
+
+        // Case 2
+        if(uncle != nullptr && uncle->color) {
+            parent->color = false;
+            uncle->color = false;
+            grandParent->color = true;
+            fixAfterInsertion(grandParent);
+            return;
+        }
+
+        // Case 3 & 4
+        if(parent == grandParent->left) {
+            if(node == parent->right) {
+                leftRotate(node, parent);
+                swap(node, parent);
+            }
+
+            grandParent->color = true; // Red
+            parent->color = false; // Black
+            rightRotate(parent, grandParent);
+        }
+        else {
+            if(node == parent->left) {
+                rightRotate(node, parent);
+                swap(node, parent);
+            }
+
+            grandParent->color = true; // Red
+            parent->color = false; // Black
+            leftRotate(parent, grandParent);
+        }
+    }
+
+    // O(n)
+    RBTreeNode* searchItem(int itemID) {
+        return DFS(itemID, root);
+    }
+
+    RBTreeNode* DFS(int itemID, RBTreeNode* node) {
+        if(node == nullptr)
+            return nullptr;
+        if(node->id == itemID)
+            return node;
+
+        RBTreeNode* leftReturn = DFS(itemID, node->left);
+        if(leftReturn != nullptr)
+            return leftReturn;
+
+        return DFS(itemID, node->right);
+    }
+
+    void fixAfterDeletion(RBTreeNode* node, RBTreeNode* parent) {
+        // node is red, DB is make it black
+        if(node != nullptr && node->color) {
+            node->color = false;
+            return;
+        }
+
+        // DB is root
+        if(parent == nullptr)
+            return;
+
+        RBTreeNode* sibling;
+        if(node == parent->left)
+            sibling = parent->right;
+        else
+            sibling = parent->left;
+
+        if(sibling != nullptr && sibling->color) {
+            // sibling is red
+            // recoloring
+            parent->color = true; // red
+            sibling->color = false; // black
+
+            // rotation
+            if(node == parent->left)
+                leftRotate(sibling, parent);
+            else
+                rightRotate(sibling, parent);
+
+            fixAfterDeletion(node, parent);
+        }
+        else {
+            // sibling is black
+            bool farChildRed = false;
+            bool nearChildRed = false;
+
+            if (sibling != nullptr) {
+                if(node == parent->left) {
+                    farChildRed = (sibling->right != nullptr && sibling->right->color);
+                    nearChildRed = (sibling->left != nullptr && sibling->left->color);
+                } else {
+                    farChildRed = (sibling->left != nullptr && sibling->left->color);
+                    nearChildRed = (sibling->right != nullptr && sibling->right->color);
+                }
+            }
+
+            // sibling’s children are black
+            if(!farChildRed && !nearChildRed) {
+                // recoloring
+                if(sibling != nullptr)
+                    sibling->color = true; // red
+
+                // propagate DB up
+                if(parent->color) {
+                    parent->color = false;
+                    return;
+                }
+
+                fixAfterDeletion(parent, parent->parent);
+            }
+            else {
+                // near red
+                if(!farChildRed) {
+                    RBTreeNode *nearChild;
+                    if (node == parent->left) {
+                        nearChild = sibling->left;
+                        nearChild->color = false; // black
+                        sibling->color = true; // red
+                        rightRotate(nearChild, sibling);
+                    } else {
+                        nearChild = sibling->right;
+                        nearChild->color = false; // black
+                        sibling->color = true; // red
+                        leftRotate(nearChild, sibling);
+                    }
+
+                    sibling = nearChild;
+                }
+
+                // far red
+                RBTreeNode* farChild;
+                if(node == parent->left) {
+                    farChild = sibling->right;
+                    // recoloring
+                    farChild->color = false; // black
+                    sibling->color = parent->color;
+                    parent->color = false; // black
+
+                    // rotation
+                    leftRotate(sibling, parent);
+                }
+                else {
+                    farChild = sibling->left;
+                    // recoloring
+                    farChild->color = false; // black
+                    sibling->color = parent->color;
+                    parent->color = false; // black
+
+                    // rotation
+                    rightRotate(sibling, parent);
+                }
+            }
+        }
+    }
+
+    RBTreeNode* getMax(RBTreeNode* node) {
+        RBTreeNode* curr = node;
+
+        while(curr->right != nullptr)
+            curr = curr->right;
+
+        return curr;
+    }
+
+    void transplant(RBTreeNode* u, RBTreeNode* v) {
+        if (u->parent == nullptr)
+            root = v;
+        else if (u == u->parent->left)
+            u->parent->left = v;
+        else
+            u->parent->right = v;
+
+        if (v != nullptr)
+            v->parent = u->parent;
+    }
+
 public:
     ConcreteAuctionTree() {
         // TODO: Initialize your Red-Black Tree
+        root = nullptr;
     }
 
+    // O(log n)
     void insertItem(int itemID, int price) override {
         // TODO: Implement Red-Black Tree insertion
-        // Remember to maintain RB-Tree properties with rotations and recoloring
+        // left -> less than, right -> greater than or equal
+        RBTreeNode* curr = root;
+        RBTreeNode* prev = nullptr;
+        RBTreeNode* newNode = new RBTreeNode(itemID, price);
+
+        if(root == nullptr) {
+            newNode->color = false;
+            root = newNode;
+            return;
+        }
+
+        while(curr != nullptr) {
+            prev = curr;
+
+            if(price < curr->price)
+                curr = curr->left;
+            else
+                curr = curr->right;
+        }
+
+        if(price < prev->price)
+            prev->left = newNode;
+        else
+            prev->right = newNode;
+
+        newNode->parent = prev;
+
+        fixAfterInsertion(newNode);
     }
 
+    // O(n) search + O(log n) deletion
     void deleteItem(int itemID) override {
         // TODO: Implement Red-Black Tree deletion
-        // This is complex - handle all cases carefully
+        // Case 1: node does not have children
+        // Case 2: node has one child
+        // Case 3: node has two children
+
+        RBTreeNode* node = searchItem(itemID);
+        if(node == nullptr) {
+            string msg = "No item with itemID: " + to_string(itemID);
+            throw runtime_error(msg);
+        }
+
+        RBTreeNode* deletedNode = node;
+        bool deletedNodeColor = deletedNode->color;
+        RBTreeNode *child, *childParent;
+
+        if(node->left != nullptr && node->right != nullptr) {
+            deletedNode = getMax(node->left); // get predecessor
+            deletedNodeColor = deletedNode->color;
+
+            node->id = deletedNode->id;
+            node->price = deletedNode->price;
+
+            child = deletedNode->left;
+            childParent = deletedNode->parent;
+
+            transplant(deletedNode, child);
+        }
+        else {
+            child = (node->left != nullptr) ? node->left : node->right;
+            childParent = node->parent;
+            transplant(node, child);
+        }
+
+        // If deleted node color is black, go to fix
+        if(!deletedNodeColor) {
+            fixAfterDeletion(child, childParent);
+        }
+
+        delete deletedNode;
+    }
+
+    void printTree() {
+        printTreeHelper(root, "", true);
     }
 };
 
