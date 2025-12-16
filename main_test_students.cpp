@@ -97,9 +97,9 @@ void test_PartA_DataStructures() {
         vector<int> top = board->getTopN(2);
         // We expect {10, 20} NOT {20, 10}
         if (top.size() < 2) return false;
-        return (top[0] == 10 && top[1] == 20); 
+        return (top[0] == 10 && top[1] == 20);
     }());
-    
+
     delete board;
 
     // 3. AuctionTree (Red-Black Tree)
@@ -160,8 +160,8 @@ void test_PartC_Navigator() {
     // MST should pick 10 and 5. Total 15.
     runner.runTest("MinBribeCost: Triangle Graph -> Cost 15", [&]() {
         vector<vector<int>> roads = {
-            {0, 1, 10, 0}, 
-            {1, 2, 5, 0}, 
+            {0, 1, 10, 0},
+            {1, 2, 5, 0},
             {0, 2, 20, 0}
         };
         // n=3, m=3, goldRate=1, silverRate=1
