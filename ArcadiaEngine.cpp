@@ -30,13 +30,12 @@ private:
             int key;
             string value;
             Table_Entry(int k, string v): key(k), value(v) {}
-            Table_Entry() {}
+            Table_Entry() : key(-1), value("") {} 
 
         };  
         int HashTableSize;
-        double loadFactor;
         int currentSize;
-        Table_Entry* table;
+        vector<Table_Entry> table;
 
         int hash1(int key){ // Multiplication method
             double a = 0.6180339887;
@@ -46,47 +45,27 @@ private:
         int hash2(int key){
             return 89 - (key % 89); // A prime less than table size
         }
-        void rehash(){
-            int oldSize = HashTableSize;
-            HashTableSize = HashTableSize * 2 + 1; // Force size to be odd
-            Table_Entry* oldTable = table; // Save old table
-            table = new Table_Entry[HashTableSize]; // Create new table with the new size
-            for(int i = 0; i < HashTableSize; i++){
-                table[i] = Table_Entry(-1, ""); // -1 indicates empty slot
-            }
-            currentSize = 0;
-            // Reinsert old entries
-            for(int i = 0; i < oldSize; i++){
-                if(oldTable[i].key != -1){
-                    insert(oldTable[i].key, oldTable[i].value);
-                }
-            }
-            delete[] oldTable;
-        }
 public:
     ConcretePlayerTable() {
         // TODO: Initialize your hash table
         HashTableSize = 101;
-        loadFactor = 0.75;
         currentSize = 0;
-        table = new Table_Entry[HashTableSize];
-        for(int i = 0; i < HashTableSize; i++){
-            table[i] = Table_Entry(-1, ""); // -1 indicates empty slot
-        }
+        table.resize(HashTableSize);
     }
 
     void insert(int playerID, string name) override {
         // TODO: Implement double hashing insert
         // Remember to handle collisions using h1(key) + i * h2(key)
-        if((double)(currentSize + 1) / HashTableSize > loadFactor){ // Check load factor
-            rehash(); 
-        }
         int idx1 = hash1(playerID);
         int idx2 = hash2(playerID);
         int pos = idx1;
         int i = 0;
         while(table[pos].key != -1 && table[pos].key != playerID){ // Handle collisions using double hashing
             i++;
+            if(i >= HashTableSize){ // Table full
+                cout << "Table is Full" << endl;
+                return;
+            } 
             pos = (idx1 + i * idx2) % HashTableSize;
         }
         if(table[pos].key == -1){ // Handle updating existing key
@@ -106,13 +85,13 @@ public:
                 return table[pos].value; // Found the key
             }
             i++;
+            if(i >= HashTableSize){ // to handle the case of search for a player that does not exist when the table is full
+                break;
+            }
             pos = (idx1 + i * idx2) % HashTableSize;
         }
 
         return ""; // Key not found   
-    }
-    ~ConcretePlayerTable() {
-        delete[] table;
     }
 };
 
