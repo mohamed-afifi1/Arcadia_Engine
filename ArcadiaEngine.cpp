@@ -606,25 +606,89 @@ public:
 // =========================================================
 
 int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
-    // TODO: Implement partition problem using DP
-    // Goal: Minimize |sum(subset1) - sum(subset2)|
-    // Hint: Use subset sum DP to find closest sum to total/2
-    return 0;
+     // Calculate total sum
+    int total = 0;
+    for (int coin : coins) {
+        total += coin;
+    }
+    
+    int target = total / 2;
+    
+    // DP array: dp[i] = true if sum i is achievable
+    vector<bool> dp(target + 1, false);
+    dp[0] = true; // Base case: sum 0 is always achievable
+    
+    // For each coin, update possible sums
+    for (int coin : coins) {
+        // Traverse backwards to avoid using same coin twice
+        for (int j = target; j >= coin; j--) {
+            if (dp[j - coin]) {
+                dp[j] = true;
+            }
+        }
+    }
+    
+    // Find closest achievable sum to target
+    int closestSum = 0;
+    for (int i = target; i >= 0; i--) {
+        if (dp[i]) {
+            closestSum = i;
+            break;
+        }
+    }
+    
+    // Minimum difference = |closestSum - (total - closestSum)|
+    return abs(2 * closestSum - total);
 }
 
 int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& items) {
-    // TODO: Implement 0/1 Knapsack using DP
-    // items = {weight, value} pairs
-    // Return maximum value achievable within capacity
-    return 0;
+    int n = items.size();
+    
+    // DP array: dp[w] = max value achievable with weight w
+    vector<int> dp(capacity + 1, 0);
+    
+    // Process each item
+    for (int i = 0; i < n; i++) {
+        int weight = items[i].first;
+        int value = items[i].second;
+        
+        // Traverse backwards to ensure each item used only once
+        for (int w = capacity; w >= weight; w--) {
+            dp[w] = max(dp[w], dp[w - weight] + value);
+        }
+    }
+    
+    return dp[capacity];
 }
 
 long long InventorySystem::countStringPossibilities(string s) {
-    // TODO: Implement string decoding DP
-    // Rules: "uu" can be decoded as "w" or "uu"
-    //        "nn" can be decoded as "m" or "nn"
-    // Count total possible decodings
-    return 0;
+    int n = s.length();
+    if (n == 0) return 1;
+    
+    // DP array: dp[i] = number of ways to decode s[0...i-1]
+    vector<long long> dp(n + 1, 0);
+    dp[0] = 1; // Base case: empty string has one decoding
+    
+    for (int i = 1; i <= n; i++) {
+        // Option 1: Keep current character as-is
+        dp[i] = dp[i - 1];
+        
+        // Option 2: If we can form a pair, add those possibilities
+        if (i >= 2) {
+            string pair = s.substr(i - 2, 2);
+            
+            // Check if "uu" -> can decode as "w" (adds alternative)
+            if (pair == "uu") {
+                dp[i] += dp[i - 2];
+            }
+            // Check if "nn" -> can decode as "m" (adds alternative)
+            else if (pair == "nn") {
+                dp[i] += dp[i - 2];
+            }
+        }
+    }
+    
+    return dp[n];
 }
 
 // =========================================================
