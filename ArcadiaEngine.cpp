@@ -37,10 +37,8 @@ private:
         int currentSize;
         vector<Table_Entry> table;
 
-        int hash1(int key){ // Multiplication method
-            double a = 0.6180339887;
-            double frac = key * a - floor(key * a); // Get fractional part
-            return floor(HashTableSize * frac); // Scale to table size
+        int hash1(int key){ // Divison Method
+            return key % 101;
         }
         int hash2(int key){
             return 89 - (key % 89); // A prime less than table size
@@ -622,9 +620,7 @@ int InventorySystem::optimizeLootSplit(int n, vector<int>& coins) {
     for (int coin : coins) {
         // Traverse backwards to avoid using same coin twice
         for (int j = target; j >= coin; j--) {
-            if (dp[j - coin]) {
-                dp[j] = true;
-            }
+            dp[j] = dp[j] || dp[j - coin];
         }
     }
     
@@ -662,33 +658,38 @@ int InventorySystem::maximizeCarryValue(int capacity, vector<pair<int, int>>& it
 }
 
 long long InventorySystem::countStringPossibilities(string s) {
-    int n = s.length();
-    if (n == 0) return 1;
-    
-    // DP array: dp[i] = number of ways to decode s[0...i-1]
-    vector<long long> dp(n + 1, 0);
-    dp[0] = 1; // Base case: empty string has one decoding
-    
-    for (int i = 1; i <= n; i++) {
-        // Option 1: Keep current character as-is
-        dp[i] = dp[i - 1];
-        
-        // Option 2: If we can form a pair, add those possibilities
-        if (i >= 2) {
-            string pair = s.substr(i - 2, 2);
-            
-            // Check if "uu" -> can decode as "w" (adds alternative)
-            if (pair == "uu") {
-                dp[i] += dp[i - 2];
+    int n = (int) s.length();
+    const int mod = 1e9 + 7;
+    vector<long long> dp(n + 2, 0);
+    dp[0] = 1;
+    dp[1] = 1;
+    for(int i = 2; i <= n + 1; i++){
+        dp[i] = (dp[i - 1] + dp[i - 2]) % mod;
+    }
+    long long result = 1;
+
+    for(int i = 0; i < n; ){
+        // If 'w' or 'm' exists, the message is impossible
+        if(s[i] == 'w' || s[i] == 'm') {
+            return 0; 
+        }
+        if(s[i] == 'u' || s[i] == 'n'){
+            char c = s[i];
+            int j = i;
+            // count block length
+            while (j < n && s[j] == c)
+            {
+                j++;
             }
-            // Check if "nn" -> can decode as "m" (adds alternative)
-            else if (pair == "nn") {
-                dp[i] += dp[i - 2];
-            }
+            int len = j - i;
+            result = (result * dp[len]) % mod;
+            i = j;
+        }
+        else{
+        i++;
         }
     }
-    
-    return dp[n];
+    return result;
 }
 
 // =========================================================
