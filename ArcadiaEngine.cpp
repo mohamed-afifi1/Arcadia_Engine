@@ -569,8 +569,7 @@ public:
 
         RBTreeNode* node = searchItem(itemID);
         if(node == nullptr) {
-            string msg = "No item with itemID: " + to_string(itemID);
-            throw runtime_error(msg);
+            return;
         }
 
         RBTreeNode* deletedNode = node;
@@ -705,20 +704,29 @@ long long InventorySystem::countStringPossibilities(string s) {
 // PART C: WORLD NAVIGATOR (Graphs)
 // =========================================================
 
-bool pathVisit(int n, const vector<vector<int>>& edges, int source, int dest, vector<int>& visited) {
-    if (source == dest)
-        return true;
+bool pathVisit(const vector<vector<int>>& adj, int source, int target, vector<bool>& visited) {
+    if (source == target) return true;
+
     visited[source] = true;
-    for (int v : edges[source])
-        if (!visited[v])
-            if (pathVisit(n, edges, v, dest, visited))
-                return true;
+    for (int v : adj[source]) {
+        if (!visited[v]) {
+            if (pathVisit(adj, v, target, visited)) return true;
+        }
+    }
     return false;
 }
 
 bool WorldNavigator::pathExists(int n, vector<vector<int>>& edges, int source, int dest) {
-    vector<int> visited(n);
-    return pathVisit(n, edges, source, dest, visited);
+    vector<vector<int>> adj(n);
+
+    for (const auto& edge : edges) {
+        int u = edge[0];
+        int v = edge[1];
+        adj[u].push_back(v);
+    }
+
+    vector<bool> visited(n, false);
+    return pathVisit(adj, source, dest, visited);
 }
 
 long long WorldNavigator::minBribeCost(int n, int m, long long goldRate, long long silverRate,
@@ -803,7 +811,6 @@ void addBinary(std::string& bin, int n)
 }
 
 string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) {
-    // Assume directed graph 
     const int INF = -1;
     int *m = new int[n*n];
     for (int u = 0; u < n; u++)
@@ -815,6 +822,7 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) 
     {
         int u = road[0], v = road[1], w = road[2];
         m[u*n+v] = w;
+        m[v*n+u] = w;
     }
     for (int t = 0; t < n; t++)
         for (int u = 0; u < n; u++)
