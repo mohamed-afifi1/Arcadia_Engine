@@ -529,7 +529,8 @@ public:
     // O(log n)
     void insertItem(int itemID, int price) override {
         // TODO: Implement Red-Black Tree insertion
-        // left -> less than, right -> greater than or equal
+        // left -> less than my price or equal price with less or equal id,
+        // right -> greater than my price or equal price with greater id
         RBTreeNode* curr = root;
         RBTreeNode* prev = nullptr;
         RBTreeNode* newNode = new RBTreeNode(itemID, price);
@@ -543,18 +544,18 @@ public:
         while(curr != nullptr) {
             prev = curr;
 
-            if(price < curr->price)
+            if(price < curr->price || (price == curr->price && itemID <= curr->id))
                 curr = curr->left;
             else
                 curr = curr->right;
         }
 
-        if(price < prev->price)
+        newNode->parent = prev;
+
+        if(price < prev->price || (price == prev->price && itemID <= prev->id))
             prev->left = newNode;
         else
             prev->right = newNode;
-
-        newNode->parent = prev;
 
         fixAfterInsertion(newNode);
     }
