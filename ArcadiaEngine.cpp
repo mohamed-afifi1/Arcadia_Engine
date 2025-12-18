@@ -840,11 +840,30 @@ string WorldNavigator::sumMinDistancesBinary(int n, vector<vector<int>>& roads) 
 // =========================================================
 
 int ServerKernel::minIntervals(vector<char>& tasks, int n) {
-    // TODO: Implement task scheduler with cooling time
-    // Same task must wait 'n' intervals before running again
-    // Return minimum total intervals needed (including idle time)
-    // Hint: Use greedy approach with frequency counting
-    return 0;
+    int Freq[26]={};
+    int MaxFreq=0;
+    int CountMax=0;
+  //  int intervals=0;
+    for (int i =0; i<tasks.size() ;i++) {
+        Freq[tasks[i]-'A']++;
+    }
+    for (int i = 0; i < 26; i++)
+        if (Freq[i] > MaxFreq) {
+            MaxFreq=Freq[i];
+        }
+    for (int f = 0; f < 26; f++) {
+        if (Freq[f] == MaxFreq) {
+            CountMax++;
+        }
+    }
+    int gaps=MaxFreq-1;
+    int time=gaps* (n + 1) + CountMax;
+
+    if (time > (int) tasks.size())
+        return time;
+    else
+        return tasks.size();
+
 }
 
 // =========================================================
