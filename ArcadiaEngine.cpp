@@ -41,7 +41,7 @@ private:
             return key % 101;
         }
         int hash2(int key){
-            return 89 - (key % 89); // A prime less than table size
+            return 97 - (key % 97); // A prime less than table size
         }
 public:
     ConcretePlayerTable() {
@@ -67,7 +67,7 @@ public:
             pos = (idx1 + i * idx2) % HashTableSize;
         }
         if(table[pos].key == -1){ // Handle updating existing key
-            currentSize++;
+            currentSize++; // increase size only if the key does not exist 
         }
         table[pos] = Table_Entry(playerID, name);
     }
@@ -83,7 +83,7 @@ public:
                 return table[pos].value; // Found the key
             }
             i++;
-            if(i >= HashTableSize){ // to handle the case of search for a player that does not exist when the table is full
+            if(i >= HashTableSize){ // to handle the case of searching for a player that does not exist when the table is full
                 break;
             }
             pos = (idx1 + i * idx2) % HashTableSize;
@@ -195,13 +195,21 @@ public:
 
     vector<int> getTopN(int n) override {
         // TODO: Return top N player IDs in descending score order
-        vector<int> result;
-        Skip_Node* current = head->forward[0]; // Start from the lowest level
-        while(current != nullptr && result.size() < n){
-            result.push_back(current->playerID);
+        int actualSize = 0;
+        Skip_Node* tmp = head->forward[0];
+        while(tmp != nullptr && actualSize < n){ // Handle case where the list has fewer than N players
+            actualSize++;
+            tmp = tmp->forward[0];
+        }
+        vector<int> topPlayers(actualSize);
+
+        Skip_Node* current = head->forward[0];
+        
+        for(int i = 0; i < actualSize; i++){
+            topPlayers[i] = current->playerID;
             current = current->forward[0];
         }
-        return result;
+        return topPlayers;
     }
     ~ConcreteLeaderboard() {
         // Clean up skip list nodes
